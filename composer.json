@@ -1,0 +1,17 @@
+{
+    "name": "studxxx/yii1-gearman",
+    "description": "Gearman worker for yii1",
+    "type": "yii1-component",
+    "require": {
+        "php": ">=5.6.0",
+        "ext-gearman": "*",
+        "yiisoft/yii": "^1.1"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "studxxx",
+            "email": "stud181177@gmail.com"
+        }
+    ]
+}
