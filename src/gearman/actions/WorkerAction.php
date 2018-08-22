@@ -10,11 +10,11 @@ class WorkerAction extends CAction
     /** @var int */
     public $port = 4730;
     /** @var string */
-    public $behavior;
+    public $performer;
     /** @var array */
     public $data;
     /** @var string */
-    public $performer = 'yiiworker';
+    public $consumer = 'yiiconsumer';
     /** @var array */
     public $message = [
         'error' => 0,
@@ -22,6 +22,10 @@ class WorkerAction extends CAction
     ];
     public $priority = ClientService::PRIORITY_NORMAL;
 
+    /**
+     * @throws CException
+     * @throws CHttpException
+     */
     public function run()
     {
         Yii::import('studxxx.yii1-gearman.src.gearman.components.ClientService');
@@ -39,8 +43,8 @@ class WorkerAction extends CAction
         $gearman->setHost($this->host);
         $gearman->setPort($this->port);
         $gearman->send(
-            CJSON::encode(['behavior' => $this->behavior, 'data' => $this->data]),
-            $this->performer,
+            CJSON::encode(['performer' => $this->performer, 'data' => $this->data]),
+            $this->consumer,
             $this->priority
         );
 

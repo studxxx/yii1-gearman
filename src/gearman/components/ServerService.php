@@ -3,6 +3,7 @@
 /**
  * Class ServerService
  * @property CLogger $logger
+ * @property GearmanWorker $service
  */
 class ServerService extends CComponent
 {
@@ -13,7 +14,7 @@ class ServerService extends CComponent
     /** @var int  */
     protected $port = 4730;
     /** @var string  */
-    protected $performer = 'yiiworker';
+    protected $consumer = 'yiiconsumer';
 
     public function run()
     {
@@ -26,11 +27,13 @@ class ServerService extends CComponent
             print "Waiting for job..." . PHP_EOL;
 
             try {
-                $this->worker->work();
+                $this->service->work();
 
                 if (!$this->isSuccess()) {
+//                    break;
                     // @todo set timeout
-                    break;
+                    $this->logger->log($this->service->getErrno(), CLogger::LEVEL_ERROR, 'console');
+                    $this->logger->log($this->service->error(), CLogger::LEVEL_ERROR, 'console');
                 }
             } catch (GearmanException $e) {
                 $this->logger->log($e->getMessage(), CLogger::LEVEL_ERROR, 'console');
@@ -42,7 +45,7 @@ class ServerService extends CComponent
 
     public function isSuccess()
     {
-        return $this->worker->returnCode() === GEARMAN_SUCCESS;
+        return $this->service->returnCode() === GEARMAN_SUCCESS;
     }
 
     public function process(GearmanJob $job)
@@ -52,16 +55,20 @@ class ServerService extends CComponent
         //$handle = $this->job->handle();
 
         try {
-            $this->attachBehavior($workload->behavior, $workload->behavior);
-
-            if (!$this->{$workload->behavior} instanceof WorkerJobInterface) {
-                throw new CException($workload->behavior . ' not instance of WorkerJobInterface');
+            if (empty($workload['performer'])) {
+                throw new CException('Consumer must be set in message');
             }
-            $this->{$workload->behavior}->perform($workload->data);
+            $this->attachBehavior($workload['performer'], $workload['performer']);
 
-            $this->detachBehavior($workload->behavior);
+            if (!$this->{$workload['performer']} instanceof WorkerJobInterface) {
+                throw new CException($workload['performer'] . ' not instance of WorkerJobInterface');
+            }
+            $this->{$workload['performer']}->perform($workload['data']);
+
+            $this->detachBehavior($workload['performer']);
         } catch (CException $e) {
             $this->logger->log($e->getMessage(), CLogger::LEVEL_ERROR, 'console');
+            $job->sendFail();
         }
     }
 
@@ -75,7 +82,7 @@ class ServerService extends CComponent
         if (!$this->worker instanceof GearmanWorker) {
             $this->worker = new GearmanWorker();
             $this->worker->addServer($this->host, $this->port);
-            $this->worker->addFunction($this->performer, [$this, 'process']);
+            $this->worker->addFunction($this->consumer, [$this, 'process']);
         }
         return $this->worker;
     }
@@ -83,17 +90,17 @@ class ServerService extends CComponent
     /**
      * @return string
      */
-    public function getPerformer()
+    public function getConsumer()
     {
-        return $this->performer;
+        return $this->consumer;
     }
 
     /**
-     * @param string $performer
+     * @param string $consumer
      */
-    public function setPerformer($performer)
+    public function setConsumer($consumer)
     {
-        $this->performer = $performer;
+        $this->consumer = $consumer;
     }
 
     /**
