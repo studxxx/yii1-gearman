@@ -1,10 +1,11 @@
 <?php
 
-//namespace modules\import\components;
-
 /**
  * Class ClientService
- * @property string $performer
+ * @property GearmanClient $client
+ * @property string $consumer
+ * @property string $host
+ * @property integer $port
  */
 class ClientService extends CComponent
 {
@@ -16,29 +17,25 @@ class ClientService extends CComponent
     protected $host = '127.0.0.1';
     /** @var int  */
     protected $port = 4730;
-    /** @var GearmanClient */
-    protected $client;
-    /** @var CLogger */
-    protected $logger;
 
     /**
-     * @param string $performer
+     * @param string|null $consumer
      * @param string $data json format
      * @param string $priority normal|high|low
      * @return string
      */
-    public function send($data, $performer = null, $priority = self::PRIORITY_NORMAL)
+    public function send($data, $consumer = null, $priority = self::PRIORITY_NORMAL)
     {
-        if ($performer !== null) {
-            $this->performer = $performer;
+        if ($consumer !== null) {
+            $this->consumer = $consumer;
         }
         if ($priority === self::PRIORITY_HIGH) {
-            return $this->client->doHighBackground($this->performer, $data);
+            return $this->client->doHighBackground($this->consumer, $data);
         }
         if ($priority === self::PRIORITY_LOW) {
-            return $this->client->doLowBackground($this->performer, $data);
+            return $this->client->doLowBackground($this->consumer, $data);
         }
-        return $this->client->doBackground($this->performer, $data);
+        return $this->client->doBackground($this->consumer, $data);
     }
 
     public function isSuccess()
@@ -46,24 +43,22 @@ class ClientService extends CComponent
         return $this->client->returnCode() === GEARMAN_SUCCESS;
     }
 
-    public function setPerformer($performer)
+    public function setConsumer($consumer)
     {
-        $this->performer = $performer;
+        $this->consumer = $consumer;
     }
 
-    public function getPerformer()
+    public function getConsumer()
     {
-        return $this->performer;
+        return $this->consumer;
     }
 
     public function getClient()
     {
-        if (!$this->client instanceof GearmanClient) {
-            $this->client = new GearmanClient();
-            $this->client->addServer($this->host, $this->port);
-        }
+        $client = new GearmanClient();
+        $client->addServer($this->host, $this->port);
 
-        return $this->client;
+        return $client;
     }
 
     /**
