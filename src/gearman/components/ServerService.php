@@ -50,20 +50,25 @@ class ServerService extends CComponent
 
     public function process(GearmanJob $job)
     {
-        $workload = unserialize($job->workload());
-        // @todo echo gettype($workload) . PHP_EOL;
+        $workload = JSON::decode($job->workload());
+        $class = StringHelper::classFromDotPath($workload['performer']);
+        $events = empty($workload['events']) ? [] : $workload['events'];
         //$handle = $this->job->handle();
 
         try {
             if (empty($workload['performer'])) {
                 throw new CException('Consumer must be set in message');
             }
-            $this->attachBehavior($workload['performer'], $workload['performer']);
 
-            if (!$this->{$workload['performer']} instanceof WorkerJobInterface) {
+            $this->attachBehavior($class, [
+                'class' => $workload['performer'],
+                'events' => $events
+            ]);
+
+            if (!$this->$class instanceof WorkerJobInterface) {
                 throw new CException($workload['performer'] . ' not instance of WorkerJobInterface');
             }
-            $this->{$workload['performer']}->perform($workload['data']);
+            $this->$class->perform($workload['data']);
 
             $this->detachBehavior($workload['performer']);
         } catch (CException $e) {
@@ -83,7 +88,7 @@ class ServerService extends CComponent
             $this->worker = new GearmanWorker();
             $this->worker->addServer($this->host, $this->port);
             $this->worker->addFunction($this->consumer, [$this, 'process']);
-        }
+    }
         return $this->worker;
     }
 
