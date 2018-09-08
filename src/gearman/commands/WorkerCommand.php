@@ -1,5 +1,4 @@
 <?php
-//Yii::setPathOfAlias('gearman', 'studxxx.yii1-gearman.src.gearman');
 
 /**
  * Background task handler
@@ -18,7 +17,8 @@ class WorkerCommand extends CConsoleCommand
 
     public function init()
     {
-        Yii::import('studxxx.yii1-gearman.src.gearman.components.ServerService');
+        Yii::import('vendor.studxxx.yii1-gearman.src.gearman.components.ServerService');
+        Yii::import('vendor.studxxx.yii1-gearman.src.gearman.helpers.StringHelper');
 
         $this->serverService = new ServerService();
         $this->serverService->setHost($this->host);
